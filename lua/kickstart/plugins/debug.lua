@@ -23,6 +23,7 @@ return {
 
     -- Add your own debuggers here
     'leoluz/nvim-dap-go',
+    'jedrzejboczar/nvim-dap-cortex-debug',
   },
   keys = function(_, keys)
     local dap = require 'dap'
@@ -64,34 +65,44 @@ return {
       ensure_installed = {
         -- Update this to ensure that you have the debuggers for the langs you want
         'delve',
+        'dap_cortex_debug',
       },
     }
 
     -- Dap UI setup
+    require('dapui').setup()
     -- For more information, see |:help nvim-dap-ui|
-    dapui.setup {
-      -- Set icons to characters that are more likely to work in every terminal.
-      --    Feel free to remove or use ones that you like more! :)
-      --    Don't feel like these are good choices.
-      icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
-      controls = {
-        icons = {
-          pause = '⏸',
-          play = '▶',
-          step_into = '⏎',
-          step_over = '⏭',
-          step_out = '⏮',
-          step_back = 'b',
-          run_last = '▶▶',
-          terminate = '⏹',
-          disconnect = '⏏',
-        },
-      },
-    }
-
-    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
+    -- dapui.setup {
+    --   -- Set icons to characters that are more likely to work in every terminal.
+    --   --    Feel free to remove or use ones that you like more! :)
+    --   --    Don't feel like these are good choices.
+    --   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+    --   controls = {
+    --     icons = {
+    --       pause = '⏸',
+    --       play = '▶',
+    --       step_into = '⏎',
+    --       step_over = '⏭',
+    --       step_out = '⏮',
+    --       step_back = 'b',
+    --       run_last = '▶▶',
+    --       terminate = '⏹',
+    --       disconnect = '⏏',
+    --     },
+    --   },
+    -- }
+    dap.listeners.before.attach.dapui_config = function()
+      dapui.open()
+    end
+    dap.listeners.before.launch.dapui_config = function()
+      dapui.open()
+    end
+    dap.listeners.before.event_terminated.dapui_config = function()
+      dapui.close()
+    end
+    dap.listeners.before.event_exited.dapui_config = function()
+      dapui.close()
+    end
 
     -- Install golang specific config
     require('dap-go').setup {
@@ -99,6 +110,65 @@ return {
         -- On Windows delve must be run attached or it crashes.
         -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
         detached = vim.fn.has 'win32' == 0,
+      },
+    }
+    require('dap-cortex-debug').setup {
+      debug = false, -- log debug messages
+      -- path to cortex-debug extension, supports vim.fn.glob
+      -- by default tries to guess: mason.nvim or VSCode extensions
+      extension_path = nil,
+      lib_extension = nil, -- shared libraries extension, tries auto-detecting, e.g. 'so' on unix
+      node_path = 'node', -- path to node.js executable
+      dapui_rtt = true, -- register nvim-dap-ui RTT element
+      -- make :DapLoadLaunchJSON register cortex-debug for C/C++, set false to disable
+      dap_vscode_filetypes = { 'c', 'cpp' },
+      rtt = {
+        buftype = 'BufTerminal', -- 'Terminal' or 'BufTerminal' for terminal buffer vs normal buffer
+      },
+    }
+    dap.adapters.gdb = {
+      type = 'executable',
+      command = 'arm-none-eabi-gdb',
+      name = 'gdb',
+    }
+
+    require('dap').configurations.c = {
+      {
+        name = 'STM32F401RE debug launch',
+        type = 'cortex-debug',
+        request = 'launch',
+        servertype = 'openocd',
+        serverpath = 'openocd',
+        gdbPath = 'arm-none-eabi-gdb',
+        device = 'STM32F401RE',
+        interface = 'swd',
+        toolchainPath = '/usr/bin',
+        toolchainPrefix = 'arm-none-eabi',
+        runToEntryPoint = 'main',
+        swoConfig = { enabled = false },
+        showDevDebugOutput = true,
+        gdbTarget = 'localhost:3333',
+        cwd = '${workspaceFolder}',
+        executable = '${workspaceFolder}/build/bin/firmware.elf',
+        configFiles = { '/usr/share/openocd/scripts/interface/stlink.cfg', '/usr/share/openocd/scripts/target/stm32f4x.cfg' },
+        preLaunchCommands = {},
+        -- overrideLaunchCommands = {
+        --   'file build/bin/firmware.elf',
+        --   'target remote localhost:50000',
+        --   'monitor reset halt',
+        --   'load build/bin/firmware.bin',
+        -- },
+        rttConfig = {
+          address = 'auto',
+          decoders = {
+            {
+              label = 'RTT:0',
+              port = 0,
+              type = 'console',
+            },
+          },
+          enabled = true,
+        },
       },
     }
   end,
