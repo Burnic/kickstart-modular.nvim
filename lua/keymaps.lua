@@ -74,4 +74,5 @@ vim.keymap.set('n', '<leader>k', '<cmd>lnext<CR>zz')
 vim.keymap.set('n', '<leader>j', '<cmd>lprev<CR>zz')
 vim.keymap.set('n', '<leader>S', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 vim.keymap.set('i', '<C-s>', vim.lsp.buf.signature_help)
+vim.keymap.set('n', '<leader><tab>', '<cmd>ClangdSwitchSourceHeader<CR>')
 -- vim: ts=2 sts=2 sw=2 et

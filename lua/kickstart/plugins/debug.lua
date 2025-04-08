@@ -207,6 +207,43 @@ return {
           enabled = true,
         },
       },
+      {
+        name = 'STM32F401RE bootloader debug launch',
+        type = 'cortex-debug',
+        request = 'launch',
+        servertype = 'openocd',
+        serverpath = 'openocd',
+        gdbPath = 'arm-none-eabi-gdb',
+        device = 'STM32F401RE',
+        interface = 'swd',
+        toolchainPath = '/usr/bin',
+        toolchainPrefix = 'arm-none-eabi',
+        runToEntryPoint = 'main',
+        swoConfig = { enabled = false },
+        showDevDebugOutput = true,
+        gdbTarget = 'localhost:3333',
+        cwd = '${workspaceFolder}',
+        executable = '${workspaceFolder}/build/bin/bootloader.elf',
+        configFiles = { '/usr/share/openocd/scripts/interface/stlink.cfg', '/usr/share/openocd/scripts/target/stm32f4x.cfg' },
+        preLaunchCommands = {},
+        -- overrideLaunchCommands = {
+        --   'file build/bin/firmware.elf',
+        --   'target remote localhost:50000',
+        --   'monitor reset halt',
+        --   'load build/bin/firmware.bin',
+        -- },
+        rttConfig = {
+          address = 'auto',
+          decoders = {
+            {
+              label = 'RTT:0',
+              port = 0,
+              type = 'console',
+            },
+          },
+          enabled = true,
+        },
+      },
     }
   end,
 }
